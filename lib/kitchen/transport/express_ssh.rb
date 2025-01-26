@@ -36,12 +36,12 @@ module Kitchen
         @connection = self.class::Connection.new(options, &block)
       end
 
-      def verifier_defined?
+      def verifier_defined?(instance)
         defined?(Kitchen::Verifier::Inspec) && instance.verifier.is_a?(Kitchen::Verifier::Inspec)
       end
 
       def finalize_config!(instance)
-        return unless verifier_defined?
+        return unless verifier_defined?(instance)
 
         super.tap do
           instance.verifier.send(:define_singleton_method, :runner_options_for_expressssh) do |config_data|

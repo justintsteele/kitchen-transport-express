@@ -45,7 +45,7 @@ describe Kitchen::Transport::ExpressSsh do
   describe "#finalize_config!" do
     context "when the verifier is an instance of Kitchen::Verifier::Inspec" do
       before do
-        allow(express_ssh).to receive(:verifier_defined?).and_return(true)
+        allow(express_ssh).to receive(:verifier_defined?).with(instance).and_return(true)
       end
 
       it "defines a custom runner options method for the verifier" do
