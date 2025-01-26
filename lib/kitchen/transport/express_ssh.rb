@@ -36,12 +36,16 @@ module Kitchen
         @connection = self.class::Connection.new(options, &block)
       end
 
+      def verifier_defined?
+        defined?(Kitchen::Verifier::Inspec) && instance.verifier.is_a?(Kitchen::Verifier::Inspec)
+      end
+
       def finalize_config!(instance)
+        return unless verifier_defined?
+
         super.tap do
-          if defined?(Kitchen::Verifier::Inspec) && instance.verifier.is_a?(Kitchen::Verifier::Inspec)
-            instance.verifier.send(:define_singleton_method, :runner_options_for_expressssh) do |config_data|
-              runner_options_for_ssh(config_data)
-            end
+          instance.verifier.send(:define_singleton_method, :runner_options_for_expressssh) do |config_data|
+            runner_options_for_ssh(config_data)
           end
         end
       end
@@ -54,12 +58,12 @@ module Kitchen
 
           Array(locals).each do |local|
             if ::File.directory?(local)
-              archive = archive_files(local)
-              ensure_remotedir_exists(remote)
+              archive = archive(local)
+              ensure_remote_dir_exists(remote)
             end
             logger.debug("[#{LOG_PREFIX}] Uploading #{File.basename(archive || local)} to #{remote}")
             super(archive || local, remote)
-            dearchive(File.basename(archive), remote) if archive
+            extract(File.basename(archive), remote) if archive
           end
         end
 
@@ -72,7 +76,7 @@ module Kitchen
           false
         end
 
-        def ensure_remotedir_exists(remote)
+        def ensure_remote_dir_exists(remote)
           execute("mkdir -p #{remote}")
         end
       end

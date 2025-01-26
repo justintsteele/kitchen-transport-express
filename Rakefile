@@ -38,4 +38,4 @@ task :build do
   Gem::Package.build(spec, nil, nil, gemfile)
 end
 
-task default: %i{test style}
+task default: %i{style test}
