@@ -14,16 +14,27 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 
-require_relative "express/base"
 require "kitchen/transport/ssh"
+require_relative "express/version"
+require_relative "express/archiver"
 
 module Kitchen
   module Transport
+    LOG_PREFIX = "EXPRESS"
+
     class ExpressSsh < Kitchen::Transport::Ssh
       kitchen_transport_api_version 1
       plugin_version Express::VERSION
 
-      include Express::Base
+      def create_new_connection(options, &block)
+        if @connection
+          logger.debug("[#{LOG_PREFIX}] Shutting previous connection #{@connection}")
+          @connection.close
+        end
+
+        @connection_options = options
+        @connection = self.class::Connection.new(options, &block)
+      end
 
       def finalize_config!(instance)
         super.tap do
@@ -36,16 +47,20 @@ module Kitchen
       end
 
       class Connection < Kitchen::Transport::Ssh::Connection
-        include Express::Base
+        include Express::Archiver
 
-        def archive_locally(path)
-          archive_basename = ::File.basename(path) + ".tgz"
-          archive = ::File.join(::File.dirname(path), archive_basename)
+        def upload(locals, remote)
+          return super unless valid_remote_requirements?
 
-          file_count = ::Dir.glob(::File.join(path, "**/*")).size
-          logger.debug("[#{LOG_PREFIX}] #{path} contains #{file_count} files.")
-          tar_archive(path, archive)
-          archive
+          Array(locals).each do |local|
+            if ::File.directory?(local)
+              archive = archive_files(local)
+              ensure_remotedir_exists(remote)
+            end
+            logger.debug("[#{LOG_PREFIX}] Uploading #{File.basename(archive || local)} to #{remote}")
+            super(archive || local, remote)
+            dearchive(File.basename(archive), remote) if archive
+          end
         end
 
         def valid_remote_requirements?
@@ -59,12 +74,6 @@ module Kitchen
 
         def ensure_remotedir_exists(remote)
           execute("mkdir -p #{remote}")
-        end
-
-        def dearchive_remotely(archive_basename, remote)
-          logger.debug("[#{LOG_PREFIX}] Unpacking archive #{archive_basename} in #{remote}")
-          execute("tar -xzf #{::File.join(remote, archive_basename)} -C #{remote}")
-          execute("rm -f #{::File.join(remote, archive_basename)}")
         end
       end
     end

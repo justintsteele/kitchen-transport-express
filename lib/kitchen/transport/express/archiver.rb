@@ -20,14 +20,30 @@ module Kitchen
   module Transport
     class Express
       module Archiver
-        def tar_archive(path, archive_path)
-          Archive.write_open_filename(archive_path, Archive::COMPRESSION_NONE,
-                                      Archive::FORMAT_ZIP) do |tar|
-                                        write_content(tar, path)
-                                      end
+        def archive_files(path)
+          archive_basename = ::File.basename(path) + ".tgz"
+          archive = ::File.join(::File.dirname(path), archive_basename)
+
+          file_count = ::Dir.glob(::File.join(path, "**/*")).size
+          logger.debug("[#{LOG_PREFIX}] #{path} contains #{file_count} files.")
+          archive(path, archive)
+          archive
+        end
+
+        def dearchive(archive_basename, remote)
+          logger.debug("[#{LOG_PREFIX}] Unpacking archive #{archive_basename} in #{remote}")
+          execute("tar -xzf #{::File.join(remote, archive_basename)} -C #{remote}")
+          execute("rm -f #{::File.join(remote, archive_basename)}")
         end
 
         private
+
+        def archive(path, archive_path)
+          Archive.write_open_filename(archive_path, Archive::COMPRESSION_GZIP,
+                                      Archive::FORMAT_TAR_PAX_RESTRICTED) do |tar|
+                                        write_content(tar, path)
+                                      end
+        end
 
         def write_content(tar, path)
           all_files = Dir.glob("#{path}/**/*")
