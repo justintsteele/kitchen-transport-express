@@ -41,11 +41,11 @@ module Kitchen
       end
 
       def finalize_config!(instance)
-        return unless verifier_defined?(instance)
-
         super.tap do
-          instance.verifier.send(:define_singleton_method, :runner_options_for_expressssh) do |config_data|
-            runner_options_for_ssh(config_data)
+          if verifier_defined?(instance)
+            instance.verifier.send(:define_singleton_method, :runner_options_for_expressssh) do |config_data|
+              runner_options_for_ssh(config_data)
+            end
           end
         end
       end
