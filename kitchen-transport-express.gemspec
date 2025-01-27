@@ -27,6 +27,7 @@ Gem::Specification.new do |spec|
   spec.description   = %q{A Test Kitchen Transport plugin that streamlines the file transfer phase to Linux hosts.}
   spec.files         = `git ls-files -z`.split("\x0").reject { |f| f.match(%r{^(test|spec|features)/}) }
   spec.homepage      = "https://github.com/justintsteele/kitchen-transport-express.git"
+  spec.metadata["github_repo"] = "https://github.com/justintsteele/kitchen-transport-express"
   spec.license       = "Apache-2.0"
   spec.require_paths = ["lib"]
   spec.add_dependency "test-kitchen"
