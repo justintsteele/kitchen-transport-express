@@ -1,5 +1,7 @@
 # Kitchen::Transport::Express
 
+[![Gem Version](https://badge.fury.io/rb/kitchen-transport-express.svg)](https://badge.fury.io/rb/kitchen-transport-express)
+
 `kitchen-transport-express` is a plugin for `Kitchen::Transport` that is designed to dramatically improve the time to converge  nodes over SSH. This gem was inspired by projects 
 like [kitchen-transport-speedy](https://github.com/criteo/kitchen-transport-speedy) and [kitchen-sync](https://github.com/coderanger/kitchen-sync).
 
