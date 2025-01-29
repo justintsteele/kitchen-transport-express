@@ -74,16 +74,20 @@ describe Kitchen::Transport::ExpressSsh do
     let(:local_dir) { "/local/dir" }
     let(:archive_file) { "/local/dir.tgz" }
     let(:logger) { instance_double("Logger", debug: nil) }
-    let(:session) { instance_double("Net::SSH::Connection::Session", scp: scp) }
+    let(:session) { instance_double("Net::SSH::Connection::Session") }
+    let(:ssh) { instance_double("Net::SSH::Connection::Session") }
+    let(:channel) { instance_double("Net::SSH::Connection::Channel") }
     let(:scp) { instance_double("Net::SCP") }
+    let(:session_opts) { { user: "test_user" } }
+    let(:session_host) { "example.com" }
 
     describe "#upload" do
       before do
+        allow(::File).to receive(:directory?).and_call_original
         allow(connection).to receive(:logger).and_return(logger)
         allow(connection).to receive(:session).and_return(session)
         allow(connection).to receive(:archive).with(local_dir).and_return(archive_file)
-        allow(scp).to receive(:upload)
-        allow(connection).to receive(:max_ssh_sessions).and_return(5) # Stub max_ssh_sessions
+        allow_any_instance_of(Kitchen::Transport::Ssh::Connection).to receive(:execute)
       end
 
       context "when remote requirements are valid" do
@@ -95,19 +99,47 @@ describe Kitchen::Transport::ExpressSsh do
           allow(::File).to receive(:directory?).with(local_dir).and_return(true)
           allow(::File).to receive(:directory?).with(archive_file).and_return(false)
 
-          expect(connection).to receive(:ensure_remote_dir_exists).with(remote)
-          expect(connection).to receive(:extract).with(File.basename(archive_file), remote)
-          allow(scp).to receive(:upload).and_return(double(wait: true))
+          expect(connection).to receive(:execute).with("mkdir -p #{remote}")
+          expect(connection).to receive(:archive).with(local_dir)
           connection.upload([local_dir], remote)
-          expect(scp).to have_received(:upload).with(archive_file, remote, {})
         end
 
         it "uploads files directly if they are not directories" do
           allow(::File).to receive(:directory?).with(local_file).and_return(false)
-          allow(scp).to receive(:upload).and_return(double(wait: true))
+          expect(connection).to receive(:execute).with("mkdir -p #{remote}")
+          expect(connection).to_not receive(:archive).with(local_dir)
           connection.upload(local_file, remote)
-          expect(scp).to have_received(:upload).with(local_file, remote, {})
         end
+      end
+    end
+    describe "#transfer" do
+      before do
+        allow(connection).to receive(:session).and_return(instance_double("Session", host: session_host, options: session_opts))
+        allow(connection).to receive(:extract)
+        allow(Net::SSH).to receive(:start).with(session_host, session_opts[:user], session_opts).and_yield(ssh)
+        allow(ssh).to receive(:scp).and_return(scp)
+        allow(scp).to receive(:upload!)
+      end
+
+      it "uploads the file and extracts it on the remote" do
+        connection.send(:transfer, archive_file, remote, session_opts)
+        expect(scp).to have_received(:upload!).with(archive_file, remote, session_opts)
+        expect(connection).to have_received(:extract).with(ssh, archive_file, remote)
+      end
+    end
+
+    describe "#extract" do
+      before do
+        allow(ssh).to receive(:open_channel).and_yield(channel)
+        allow(channel).to receive(:request_pty)
+        allow(channel).to receive(:exec)
+        allow(ssh).to receive(:loop)
+      end
+
+      it "extracts the file on the remote host" do
+        connection.send(:extract, ssh, archive_file, remote)
+        expect(channel).to have_received(:exec).with("tar -xzf #{remote}/#{File.basename(archive_file)} -C #{remote}")
+        expect(channel).to have_received(:exec).with("rm -f #{remote}/#{File.basename(archive_file)}")
       end
     end
   end

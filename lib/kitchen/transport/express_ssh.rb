@@ -15,6 +15,7 @@
 #   limitations under the License.
 
 require "kitchen/transport/ssh"
+require "concurrent-ruby"
 require_relative "express/version"
 require_relative "express/archiver"
 
@@ -56,15 +57,14 @@ module Kitchen
         def upload(locals, remote)
           return super unless valid_remote_requirements?
 
-          Array(locals).each do |local|
-            if ::File.directory?(local)
-              archive = archive(local)
-              ensure_remote_dir_exists(remote)
-            end
-            logger.debug("[#{LOG_PREFIX}] Uploading #{File.basename(archive || local)} to #{remote}")
-            super(archive || local, remote)
-            extract(File.basename(archive), remote) if archive
+          execute("mkdir -p #{remote}")
+          processed_locals = process_locals(locals)
+          pool = Concurrent::FixedThreadPool.new([processed_locals.length, 10].min)
+          processed_locals.each do |local|
+            pool.post { transfer(local, remote, session.options) }
           end
+          pool.shutdown
+          pool.wait_for_termination
         end
 
         def valid_remote_requirements?
@@ -76,8 +76,28 @@ module Kitchen
           false
         end
 
-        def ensure_remote_dir_exists(remote)
-          execute("mkdir -p #{remote}")
+        private
+
+        def process_locals(locals)
+          processed_locals = []
+          Array(locals).each do |local|
+            if ::File.directory?(local)
+              archive_name = archive(local)
+              processed_locals.push archive_name
+            else
+              processed_locals.push local
+            end
+          end
+          processed_locals
+        end
+
+        def transfer(local, remote, opts = {})
+          logger.debug("[#{LOG_PREFIX}] Transferring #{local} to #{remote}")
+
+          Net::SSH.start(session.host, opts[:user], **opts) do |ssh|
+            ssh.scp.upload!(local, remote, opts)
+            extract(ssh, local, remote)
+          end
         end
       end
     end
