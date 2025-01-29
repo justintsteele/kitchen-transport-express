@@ -78,7 +78,7 @@ module Kitchen
         end
 
         def content(file)
-          File.read file unless File.directory? file
+          File.read(file, mode: "rb") unless File.directory? file
         end
 
         def size(file)
