@@ -30,10 +30,17 @@ module Kitchen
           archive_full_name
         end
 
-        def extract(archive_basename, remote)
-          logger.debug("[#{LOG_PREFIX}] Unpacking archive #{archive_basename} in #{remote}")
-          execute("tar -xzf #{::File.join(remote, archive_basename)} -C #{remote}")
-          execute("rm -f #{::File.join(remote, archive_basename)}")
+        def extract(session, local, remote)
+          return unless local.match(/.*\.tgz/)
+
+          archive_basename = File.basename(local)
+          logger.debug("[#{LOG_PREFIX}] Extracting #{::File.join(remote, archive_basename)}")
+          session.open_channel do |channel|
+            channel.request_pty
+            channel.exec("tar -xzf #{::File.join(remote, archive_basename)} -C #{remote}")
+            channel.exec("rm -f #{File.join(remote, archive_basename)}")
+          end
+          session.loop
         end
 
         private
@@ -78,7 +85,7 @@ module Kitchen
         end
 
         def content(file)
-          File.read file unless File.directory? file
+          File.read(file, mode: "rb") unless File.directory? file
         end
 
         def size(file)
