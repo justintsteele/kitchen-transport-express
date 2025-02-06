@@ -90,10 +90,6 @@ module Kitchen
           f = File.stat(file)
           f.mode
         end
-
-        def timestamp
-          Time.now.to_i
-        end
       end
     end
   end
