@@ -23,7 +23,7 @@ transport:
 Verify that everything has loaded correctly with `kitchen list`.  You should see `ExpressSsh` as the transport.
 
 ```bash
-> kitchen list                                                                                                                                                                                                                                             ─╯
+> kitchen list
 Instance            Driver  Provisioner  Verifier  Transport   Last Action    Last Error
 default-linux       Oci     ChefInfra    Inspec    ExpressSsh  <Not Created>  <None>
 ```
