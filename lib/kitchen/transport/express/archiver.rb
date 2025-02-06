@@ -54,37 +54,32 @@ module Kitchen
         def write_content(tar, path)
           all_files = Dir.glob("#{path}/**/*")
           all_files.each do |f|
-            tar.new_entry do |e|
-              entry(e, f, path)
-              tar.write_header e
-              tar.write_data content(f) if File.file? f
+            if File.file? f
+              tar.new_entry do |e|
+                entry(e, f, path)
+                tar.write_header e
+                tar.write_data content(f)
+              end
             end
           end
         end
 
         def entry(ent, file, path)
-          ent.pathname = path_name(file, path)
-          ent.size = size(file) if File.file? file
+          ent.pathname = file.gsub(%r{#{File.dirname(path)}/}, "")
+          ent.size = size(file)
           ent.mode = mode(file)
-          ent.filetype = file_type(file)
-          ent.atime = timestamp
-          ent.mtime = timestamp
+          ent.filetype = Archive::Entry::FILE
+          ent.atime = Time.now.to_i
+          ent.mtime = Time.now.to_i
         end
 
-        def path_name(file, path)
-          file.gsub(%r{#{File.dirname(path)}/}, "")
-        end
-
-        def file_type(file)
-          if File.file? file
-            Archive::Entry::FILE
-          elsif File.directory? file
-            Archive::Entry::DIRECTORY
-          end
-        end
-
+        # The content of the file in binary format. Directories have no content.
+        #
+        # @param file [String] the path to the file
+        # @return [String] the content of the file
+        # @api private
         def content(file)
-          File.read(file, mode: "rb") unless File.directory? file
+          File.read(file, mode: "rb")
         end
 
         def size(file)
