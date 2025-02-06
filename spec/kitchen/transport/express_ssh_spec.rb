@@ -91,27 +91,22 @@ describe Kitchen::Transport::ExpressSsh do
       end
 
       context "when remote requirements are valid" do
-        before do
-          allow(connection).to receive(:valid_remote_requirements?).and_return(true)
-        end
-
         it "archives directories and uploads them" do
           allow(::File).to receive(:directory?).with(local_dir).and_return(true)
           allow(::File).to receive(:directory?).with(archive_file).and_return(false)
 
-          expect(connection).to receive(:execute).with("mkdir -p #{remote}")
           expect(connection).to receive(:archive).with(local_dir)
           connection.upload([local_dir], remote)
         end
 
         it "uploads files directly if they are not directories" do
           allow(::File).to receive(:directory?).with(local_file).and_return(false)
-          expect(connection).to receive(:execute).with("mkdir -p #{remote}")
           expect(connection).to_not receive(:archive).with(local_dir)
           connection.upload(local_file, remote)
         end
       end
     end
+
     describe "#transfer" do
       before do
         allow(connection).to receive(:session).and_return(instance_double("Session", host: session_host, options: session_opts))
@@ -138,8 +133,7 @@ describe Kitchen::Transport::ExpressSsh do
 
       it "extracts the file on the remote host" do
         connection.send(:extract, ssh, archive_file, remote)
-        expect(channel).to have_received(:exec).with("tar -xzf #{remote}/#{File.basename(archive_file)} -C #{remote}")
-        expect(channel).to have_received(:exec).with("rm -f #{remote}/#{File.basename(archive_file)}")
+        expect(channel).to have_received(:exec).with("tar -xzf #{remote}/#{File.basename(archive_file)} -C #{remote} && rm -f #{remote}/#{File.basename(archive_file)}")
       end
     end
   end
