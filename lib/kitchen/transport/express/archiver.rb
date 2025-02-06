@@ -37,8 +37,7 @@ module Kitchen
           logger.debug("[#{Express::LOG_PREFIX}] Extracting #{::File.join(remote, archive_basename)}")
           session.open_channel do |channel|
             channel.request_pty
-            channel.exec("tar -xzf #{::File.join(remote, archive_basename)} -C #{remote}")
-            channel.exec("rm -f #{File.join(remote, archive_basename)}")
+            channel.exec("tar -xzf #{::File.join(remote, archive_basename)} -C #{remote} && rm -f #{File.join(remote, archive_basename)}")
           end
           session.loop
         end

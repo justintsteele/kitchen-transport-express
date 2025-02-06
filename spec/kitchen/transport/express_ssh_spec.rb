@@ -138,8 +138,7 @@ describe Kitchen::Transport::ExpressSsh do
 
       it "extracts the file on the remote host" do
         connection.send(:extract, ssh, archive_file, remote)
-        expect(channel).to have_received(:exec).with("tar -xzf #{remote}/#{File.basename(archive_file)} -C #{remote}")
-        expect(channel).to have_received(:exec).with("rm -f #{remote}/#{File.basename(archive_file)}")
+        expect(channel).to have_received(:exec).with("tar -xzf #{remote}/#{File.basename(archive_file)} -C #{remote} && rm -f #{remote}/#{File.basename(archive_file)}")
       end
     end
   end
