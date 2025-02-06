@@ -25,7 +25,7 @@ module Kitchen
           archive_full_name = ::File.join(::File.dirname(path), archive_basename)
 
           file_count = ::Dir.glob(::File.join(path, "**/*")).size
-          logger.debug("[#{LOG_PREFIX}] #{path} contains #{file_count} files.")
+          logger.debug("[#{Express::LOG_PREFIX}] #{path} contains #{file_count} files.")
           create_archive(path, archive_full_name)
           archive_full_name
         end
@@ -34,7 +34,7 @@ module Kitchen
           return unless local.match(/.*\.tgz/)
 
           archive_basename = File.basename(local)
-          logger.debug("[#{LOG_PREFIX}] Extracting #{::File.join(remote, archive_basename)}")
+          logger.debug("[#{Express::LOG_PREFIX}] Extracting #{::File.join(remote, archive_basename)}")
           session.open_channel do |channel|
             channel.request_pty
             channel.exec("tar -xzf #{::File.join(remote, archive_basename)} -C #{remote}")

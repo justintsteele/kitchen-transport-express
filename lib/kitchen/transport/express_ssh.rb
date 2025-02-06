@@ -21,7 +21,10 @@ require_relative "express/archiver"
 
 module Kitchen
   module Transport
-    LOG_PREFIX = "EXPRESS"
+    class Express
+      # A constant that gets prepended to debugger messages
+      LOG_PREFIX = "EXPRESS"
+    end
 
     class ExpressSsh < Kitchen::Transport::Ssh
       kitchen_transport_api_version 1
@@ -29,7 +32,7 @@ module Kitchen
 
       def create_new_connection(options, &block)
         if @connection
-          logger.debug("[#{LOG_PREFIX}] Shutting previous connection #{@connection}")
+          logger.debug("[#{Express::LOG_PREFIX}] Shutting previous connection #{@connection}")
           @connection.close
         end
 
@@ -71,7 +74,7 @@ module Kitchen
           execute("(which tar && which gzip) > /dev/null")
           true
         rescue => e
-          logger.debug("[#{LOG_PREFIX}] Requirements not met on remote host for Express transport.")
+          logger.debug("[#{Express::LOG_PREFIX}] Requirements not met on remote host for Express transport.")
           logger.debug(e)
           false
         end
@@ -92,7 +95,7 @@ module Kitchen
         end
 
         def transfer(local, remote, opts = {})
-          logger.debug("[#{LOG_PREFIX}] Transferring #{local} to #{remote}")
+          logger.debug("[#{Express::LOG_PREFIX}] Transferring #{local} to #{remote}")
 
           Net::SSH.start(session.host, opts[:user], **opts) do |ssh|
             ssh.scp.upload!(local, remote, opts)
