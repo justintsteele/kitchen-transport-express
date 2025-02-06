@@ -1,5 +1,9 @@
 # kitchen-transport-express CHANGELOG
 
+## 1.2.0
+* feat: 🥅 add error handling to the thread pool
+* feat: 📝🎨 add YARD tags and cleaned up class namespaces and private methods
+
 ## 1.1.0
 * feat: ⚡️ threaded execution of the upload and extract phase
 * fix: 🩹 add binary mode to archiver when reading a file
