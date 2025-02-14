@@ -23,10 +23,10 @@ module Kitchen
       #
       # @author Justin Steele <justin.steele@oracle.com>
       module Archiver
-        # Creates the archive locally in the Kitchen cache location
+        # Creates the archive locally in the Kitchen cache location.
         #
-        # @param path [String] the path of the top-level directory to be arvhied
-        # @return [String] the name of the archive
+        # @param path [String] the path of the top-level directory to be arvhied.
+        # @return [String] the name of the archive.
         def archive(path)
           archive_basename = ::File.basename(path) + ".tgz"
           archive_full_name = ::File.join(::File.dirname(path), archive_basename)
@@ -37,10 +37,9 @@ module Kitchen
           archive_full_name
         end
 
-        # Extracts the archive on the remote host
+        # Extracts the archive on the remote host.
         #
-        # @param session [Net::SSH::Connection::Session] The SSH session used to connect to the remote host and execute
-        #   the extract and cleanup commands
+        # @param session [Net::SSH::Connection::Session] The SSH session used to connect to the remote host and execute the extract and cleanup commands.
         def extract(session, local, remote)
           return unless local.match(/.*\.tgz/)
 
@@ -55,10 +54,10 @@ module Kitchen
 
         private
 
-        # Creats a archive of the directory provided
+        # Creats a archive of the directory provided.
         #
-        # @param path [String] the path to the directory that will be archived
-        # @param archive_path [String] the fully qualified path to the archive that will be created
+        # @param path [String] the path to the directory that will be archived.
+        # @param archive_path [String] the fully qualified path to the archive that will be created.
         # @api private
         def create_archive(path, archive_path)
           Archive.write_open_filename(archive_path, Archive::COMPRESSION_GZIP,
@@ -67,10 +66,10 @@ module Kitchen
                                       end
         end
 
-        # Appends the content of each item in the expanded directory path
+        # Appends the content of each item in the expanded directory path.
         #
-        # @param tar [Archive::Writer] the instance of the archive class
-        # @param path [String] the path to the directory that will be archived
+        # @param tar [Archive::Writer] the instance of the archive class.
+        # @param path [String] the path to the directory that will be archived.
         # @api private
         def write_content(tar, path)
           all_files = Dir.glob("#{path}/**/*")
@@ -85,11 +84,11 @@ module Kitchen
           end
         end
 
-        # Creates the entry in the Archive for each item
+        # Creates the entry in the Archive for each item.
         #
-        # @param ent [Archive::Entry] the current entry being added to the archive
-        # @param file [String] the current file or directory being added to the archive
-        # @param path [String] the path to the directory being archived
+        # @param ent [Archive::Entry] the current entry being added to the archive.
+        # @param file [String] the current file or directory being added to the archive.
+        # @param path [String] the path to the directory being archived.
         # @api private
         def entry(ent, file, path)
           ent.pathname = file.gsub(%r{#{File.dirname(path)}/}, "")
@@ -102,8 +101,8 @@ module Kitchen
 
         # The content of the file in binary format. Directories have no content.
         #
-        # @param file [String] the path to the file
-        # @return [String] the content of the file
+        # @param file [String] the path to the file.
+        # @return [String] the content of the file.
         # @api private
         def content(file)
           File.read(file, mode: "rb")
@@ -111,17 +110,17 @@ module Kitchen
 
         # The size of the file. Directories have no size.
         #
-        # @param file [String] the path to the file
-        # @return [Integer] the size of the file
+        # @param file [String] the path to the file.
+        # @return [Integer] the size of the file.
         # @api private
         def size(file)
           content(file).size
         end
 
-        # The file permissions of the file
+        # The file permissions of the file.
         #
-        # @param file [String] the path to the file or directory
-        # @return [Integer] the mode of the file or directory
+        # @param file [String] the path to the file or directory.
+        # @return [Integer] the mode of the file or directory.
         # @api private
         def mode(file)
           f = File.stat(file)

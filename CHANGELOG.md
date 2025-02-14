@@ -1,5 +1,9 @@
 # kitchen-transport-express CHANGELOG
 
+## 1.3.0
+* chore: 📝 minor updates to method documentation
+* chore: 🔧 add metadata to gemspec
+
 ## 1.2.0
 * feat: 🥅 add error handling to the thread pool
 * feat: 📝🎨 add YARD tags and cleaned up class namespaces and private methods
