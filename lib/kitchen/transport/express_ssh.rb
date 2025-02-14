@@ -21,15 +21,15 @@ require_relative "express/archiver"
 
 module Kitchen
   module Transport
-    # Kitchen Transport Express
+    # Kitchen Transport Express.
     #
     # @author Justin Steele <justin.steele@oracle.com>
     class Express
-      # A constant that gets prepended to debugger messages
+      # A constant that gets prepended to debugger messages.
       LOG_PREFIX = "EXPRESS"
     end
 
-    # Express SSH Transport Error class
+    # Express SSH Transport Error class.
     #
     # @author Justin Steele <justin.steele@oracle.com>
     class ExpressFailed < StandardError
@@ -38,17 +38,17 @@ module Kitchen
       end
     end
 
-    # Express SSH Transport plugin for Test Kitchen
+    # Express SSH Transport plugin for Test Kitchen.
     #
     # @author Justin Steele <justin.steele@oracle.com>
     class ExpressSsh < Kitchen::Transport::Ssh
       kitchen_transport_api_version 1
       plugin_version Express::VERSION
 
-      # Override the method in the super class to start the connection with our connection class
+      # Override the method in the super class to start the connection with our connection class.
       #
-      # @param options [Hash] connection options
-      # @return [Ssh::Connection] an instance of Kitchen::Transport::ExpressSsh::Connection
+      # @param options [Hash] connection options.
+      # @return [Ssh::Connection] an instance of Kitchen::Transport::ExpressSsh::Connection.
       def create_new_connection(options, &block)
         if @connection
           logger.debug("[#{Express::LOG_PREFIX}] Shutting previous connection #{@connection}")
@@ -59,16 +59,16 @@ module Kitchen
         @connection = self.class::Connection.new(options, &block)
       end
 
-      # Determines if the Kitchen instance is attempting a Verify stage
+      # Determines if the Kitchen instance is attempting a Verify stage.
       #
-      # @param instance [Kitchen::Instance] the instance passed in from Kitchen
+      # @param instance [Kitchen::Instance] the instance passed in from Kitchen.
       # @return [Boolean]
       def verifier_defined?(instance)
         defined?(Kitchen::Verifier::Inspec) && instance.verifier.is_a?(Kitchen::Verifier::Inspec)
       end
 
-      # Finalizes the Kitchen config by executing super and parsing the options provided by the kitchen.yml
-      # The only difference here is we layer in our ssh options so the verifier can use our transport
+      # Finalizes the Kitchen config by executing super and parsing the options provided by the kitchen.yml.
+      # The only difference here is we layer in our ssh options so the verifier can use our transport.
       # (see Kitchen::Transport::Ssh#finalize_config!)
       def finalize_config!(instance)
         super.tap do
@@ -88,15 +88,14 @@ module Kitchen
       class Connection < Kitchen::Transport::Ssh::Connection
         include Express::Archiver
 
+        # Overrides the upload method in Kitchen::Transport::Ssh::Connection.
+        # The special sauce here is that we create threaded uploads of archives of the kitchen files rather than serial file uploads.
         # (see Kitchen::Transport::Base::Connection#upload)
-        # Overrides the upload method in Kitchen::Transport::Ssh::Connection
-        # The special sauce here is that we create threaded executions of uploading our archives
         #
-        # @param locals [Array] the top-level list of directories and files to be transfered
-        # @param remote [String] the remote directory config[:kitchen_root]
-        # @raise [ExpressFailed] if any of the threads raised an exception
-        # rubocop: disable Metrics/MethodLength
-        def upload(locals, remote)
+        # @param locals [Array] the top-level list of directories and files to be transfered.
+        # @param remote [String] the remote directory (kitchen_root).
+        # @raise [ExpressFailed] if any of the threads raised an exception.
+        def upload(locals, remote) # rubocop: disable Metrics/MethodLength
           return super unless valid_remote_requirements?(remote)
 
           processed_locals = process_locals(locals)
@@ -112,14 +111,13 @@ module Kitchen
           pool.wait_for_termination
 
           raise ExpressFailed, exceptions.pop unless exceptions.empty?
-        end
-        # rubocop: enable Metrics/MethodLength
+        end # rubocop: enable Metrics/MethodLength
 
         private
 
-        # Creates the thread pool and exceptions queue
+        # Creates the thread pool and exceptions queue.
         #
-        # @param processed_locals [Array] list of files and archives to be uploaded
+        # @param processed_locals [Array] list of files and archives to be uploaded.
         # @return [Array(Concurrent::FixedThreadPool, Queue)]
         # @api private
         def thread_pool(processed_locals)
@@ -128,7 +126,7 @@ module Kitchen
 
         # Ensures the remote host has the minimum-required executables to extract the archives.
         #
-        # @param remote [String] the remote directory config[:kitchen_root]
+        # @param remote [String] the remote directory (kitchen_root).
         # @return [Boolean]
         # @api private
         def valid_remote_requirements?(remote)
@@ -144,8 +142,8 @@ module Kitchen
         # Builds an array of files we want to ship. If the top-level item is a directory, archive it and
         # add the archive name to the array.
         #
-        # @param locals [Array] the top-level list of directories and files to be transfered
-        # @return [Array] the paths to the files and archives that will be transferred
+        # @param locals [Array] the top-level list of directories and files to be transfered.
+        # @return [Array] the paths to the files and archives that will be transferred.
         # @api private
         def process_locals(locals)
           processed_locals = []
@@ -162,10 +160,10 @@ module Kitchen
 
         # Uploads the archives or files to the remote host.
         #
-        # @param local [String] a single top-level item from the upload method
-        # @param remote [String] path to remote destination
-        # @param opts [Hash] the ssh options that came in from the Kitchen instance
-        # @raise [StandardError] if the files could not be uploaded successfully
+        # @param local [String] a single top-level item from the upload method.
+        # @param remote [String] path to remote destination.
+        # @param opts [Hash] the ssh options that came in from the Kitchen instance.
+        # @raise [StandardError] if the files could not be uploaded successfully.
         # @api private
         def transfer(local, remote, opts = {})
           logger.debug("[#{Express::LOG_PREFIX}] Transferring #{local} to #{remote}")

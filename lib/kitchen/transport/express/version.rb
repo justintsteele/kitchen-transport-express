@@ -17,7 +17,10 @@
 module Kitchen
   module Transport
     class Express
-      VERSION = "1.2.0"
+      # The version string for Kitchen Transport Express.
+      #
+      # @author Justin Steele <justin.steele@oracle.com>
+      VERSION = "1.3.0"
     end
   end
 end
