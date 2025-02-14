@@ -18,12 +18,12 @@ lib = File.expand_path("lib", __dir__)
 $LOAD_PATH.unshift(lib) unless $LOAD_PATH.include?(lib)
 require "kitchen/transport/express/version"
 
-Gem::Specification.new do |spec|
+Gem::Specification.new do |spec| # rubocop: disable Metrics/BlockLength
   spec.name          = "kitchen-transport-express"
   spec.version       = Kitchen::Transport::Express::VERSION
   spec.authors       = ["Justin Steele"]
   spec.email         = ["justin.steele@oracle.com"]
-  spec.summary       = %q{Skip the long lines in transport. 15 items or less!}
+  spec.summary       = %q{Skip the long lines in Kitchen Transport!}
   spec.description   = %q{A Test Kitchen Transport plugin that streamlines the file transfer phase to Linux hosts.}
   spec.files         = `git ls-files -z`.split("\x0").reject { |f| f.match(%r{^(test|spec|features)/}) }
   spec.homepage      = "https://github.com/justintsteele/kitchen-transport-express.git"
@@ -31,6 +31,13 @@ Gem::Specification.new do |spec|
   spec.license       = "Apache-2.0"
   spec.require_paths = ["lib"]
   spec.required_ruby_version = ">= 2.4"
+  spec.metadata = {
+    "bug_tracker_uri"   => "https://github.com/justintsteele/kitchen-transport-express/issues",
+    "changelog_uri"     => "https://github.com/justintsteele/kitchen-transport-express/blob/main/CHANGELOG.md",
+    "documentation_uri" => "https://github.com/justintsteele/kitchen-transport-express/blob/main/README.md",
+    "homepage_uri"      => "https://github.com/justintsteele/kitchen-transport-express",
+    "source_code_uri"   => "https://github.com/justintsteele/kitchen-transport-express",
+  }
   spec.add_dependency "test-kitchen"
   spec.add_dependency "ffi-libarchive"
   spec.add_dependency "concurrent-ruby"
@@ -40,4 +47,4 @@ Gem::Specification.new do |spec|
   spec.add_development_dependency "rake"
   spec.add_development_dependency "rspec"
   spec.add_development_dependency "yard"
-end
+end  # rubocop: enable Metrics/BlockLength
