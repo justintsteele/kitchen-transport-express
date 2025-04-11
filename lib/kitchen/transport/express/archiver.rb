@@ -38,7 +38,9 @@ module Kitchen
 
         # Extracts the archive on the remote host.
         #
-        # @param session [Net::SSH::Connection::Session] The SSH session used to connect to the remote host and execute the extract and cleanup commands.
+        # @param session [Net::SSH::Connection::Session] the SSH session used to connect to the remote host and execute the extract and cleanup commands.
+        # @param local [String] the directory in the local sandbox that is being processed.
+        # @param remote [String] the remote directory (kitchen_root).
         def extract(session, local, remote)
           return unless local.match(/.*\.tgz/)
 
@@ -57,6 +59,7 @@ module Kitchen
         #
         # @param path [String] the path to the directory that will be archived.
         # @return [Array] an array of all files to be archived.
+        # @api private
         def all_files(path)
           Dir.glob(File.join(path, "/**/*"), File::FNM_DOTMATCH).reject { |f| %w{. ..}.include? File.basename(f) }
         end
@@ -64,6 +67,7 @@ module Kitchen
         # Creats a archive of the directory provided.
         #
         # @param path [String] the path to the directory that will be archived.
+        # @param files [Array] the array of all files that will be archived.
         # @param archive_path [String] the fully qualified path to the archive that will be created.
         # @api private
         def create_archive(path, files, archive_path)
@@ -77,6 +81,7 @@ module Kitchen
         #
         # @param tar [Archive::Writer] the instance of the archive class.
         # @param path [String] the path to the directory that will be archived.
+        # @param files [Array] the array of all files that will be archived.
         # @api private
         def write_content(tar, path, files)
           files.each do |f|
