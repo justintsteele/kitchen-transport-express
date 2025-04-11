@@ -1,5 +1,8 @@
 # kitchen-transport-express CHANGELOG
 
+## 1.3.1
+* fix: 🐛 ensure directories that only contain dot files get archived
+
 ## 1.3.0
 * chore: 📝 minor updates to method documentation
 * chore: 🔧 add metadata to gemspec
