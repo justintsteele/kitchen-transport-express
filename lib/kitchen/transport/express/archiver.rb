@@ -30,16 +30,17 @@ module Kitchen
         def archive(path)
           archive_basename = ::File.basename(path) + ".tgz"
           archive_full_name = ::File.join(::File.dirname(path), archive_basename)
-
-          file_count = ::Dir.glob(::File.join(path, "**/*")).size
-          logger.debug("[#{Express::LOG_PREFIX}] #{path} contains #{file_count} files.")
-          create_archive(path, archive_full_name)
+          files = all_files(path)
+          logger.debug("[#{Express::LOG_PREFIX}] #{path} contains #{files.size} files.")
+          create_archive(path, files, archive_full_name)
           archive_full_name
         end
 
         # Extracts the archive on the remote host.
         #
-        # @param session [Net::SSH::Connection::Session] The SSH session used to connect to the remote host and execute the extract and cleanup commands.
+        # @param session [Net::SSH::Connection::Session] the SSH session used to connect to the remote host and execute the extract and cleanup commands.
+        # @param local [String] the directory in the local sandbox that is being processed.
+        # @param remote [String] the remote directory (kitchen_root).
         def extract(session, local, remote)
           return unless local.match(/.*\.tgz/)
 
@@ -54,15 +55,25 @@ module Kitchen
 
         private
 
+        # Creates a list of all files that are in the directory to be archived.
+        #
+        # @param path [String] the path to the directory that will be archived.
+        # @return [Array] an array of all files to be archived.
+        # @api private
+        def all_files(path)
+          Dir.glob(File.join(path, "/**/*"), File::FNM_DOTMATCH).reject { |f| %w{. ..}.include? File.basename(f) }
+        end
+
         # Creats a archive of the directory provided.
         #
         # @param path [String] the path to the directory that will be archived.
+        # @param files [Array] the array of all files that will be archived.
         # @param archive_path [String] the fully qualified path to the archive that will be created.
         # @api private
-        def create_archive(path, archive_path)
+        def create_archive(path, files, archive_path)
           Archive.write_open_filename(archive_path, Archive::COMPRESSION_GZIP,
                                       Archive::FORMAT_TAR_PAX_RESTRICTED) do |tar|
-                                        write_content(tar, path)
+                                        write_content(tar, path, files)
                                       end
         end
 
@@ -70,10 +81,10 @@ module Kitchen
         #
         # @param tar [Archive::Writer] the instance of the archive class.
         # @param path [String] the path to the directory that will be archived.
+        # @param files [Array] the array of all files that will be archived.
         # @api private
-        def write_content(tar, path)
-          all_files = Dir.glob("#{path}/**/*")
-          all_files.each do |f|
+        def write_content(tar, path, files)
+          files.each do |f|
             if File.file? f
               tar.new_entry do |e|
                 entry(e, f, path)
