@@ -31,9 +31,22 @@ module Kitchen
           archive_basename = ::File.basename(path) + ".tgz"
           archive_full_name = ::File.join(::File.dirname(path), archive_basename)
           files = all_files(path)
-          logger.debug("[#{Express::LOG_PREFIX}] #{path} contains #{files.size} files.")
+          start_time = Time.now
           create_archive(path, files, archive_full_name)
+          Express.log(logger, "create archive #{File.basename(archive_full_name)} (#{files.size} files)", start_time)
           archive_full_name
+        end
+
+        # Transfers the archive to the remote host.
+        #
+        # @param session [Net::SSH::Connection::Session] the SSH session used to connect to the remote host and execute the extract and cleanup commands.
+        # @param local [String] the directory in the local sandbox that is being processed.
+        # @param remote [String] the remote directory (kitchen_root).
+        # @param opts [Hash] the ssh options that came in from the Kitchen instance.
+        def scp(session, local, remote, opts = {})
+          start_time = Time.now
+          session.scp.upload!(local, remote, opts)
+          Express.log(logger, "upload #{File.basename(local)} (Thread ID: #{Thread.current.object_id})", start_time)
         end
 
         # Extracts the archive on the remote host.
@@ -44,13 +57,14 @@ module Kitchen
         def extract(session, local, remote)
           return unless local.match(/.*\.tgz/)
 
+          start_time = Time.now
           archive_basename = File.basename(local)
-          logger.debug("[#{Express::LOG_PREFIX}] Extracting #{::File.join(remote, archive_basename)}")
           session.open_channel do |channel|
             channel.request_pty
             channel.exec("tar -xzf #{::File.join(remote, archive_basename)} -C #{remote} && rm -f #{File.join(remote, archive_basename)}")
           end
           session.loop
+          Express.log(logger, "extract #{File.basename(local)} (Thread ID: #{Thread.current.object_id})", start_time)
         end
 
         private

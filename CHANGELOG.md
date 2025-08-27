@@ -1,5 +1,9 @@
 # kitchen-transport-express CHANGELOG
 
+## 1.4.0
+* feat: ♻️ utilize concurrent futures for enhanced parallelism
+* feat: 🔊 enhanced logging
+
 ## 1.3.1
 * fix: 🐛 ensure directories that only contain dot files get archived
 
