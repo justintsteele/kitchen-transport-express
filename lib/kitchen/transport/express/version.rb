@@ -20,7 +20,7 @@ module Kitchen
       # The version string for Kitchen Transport Express.
       #
       # @author Justin Steele <justin.steele@oracle.com>
-      VERSION = "1.3.1"
+      VERSION = "1.4.0"
     end
   end
 end

@@ -74,18 +74,25 @@ describe Kitchen::Transport::ExpressSsh do
     let(:local_dir) { "/local/dir" }
     let(:archive_file) { "/local/dir.tgz" }
     let(:logger) { instance_double("Logger", debug: nil) }
-    let(:session) { instance_double("Net::SSH::Connection::Session") }
+    let(:session) { instance_double("Net::SSH::Connection::Session", host: session_host, options: session_opts) }
     let(:ssh) { instance_double("Net::SSH::Connection::Session") }
     let(:channel) { instance_double("Net::SSH::Connection::Channel") }
     let(:scp) { instance_double("Net::SCP") }
     let(:session_opts) { { user: "test_user" } }
     let(:session_host) { "example.com" }
 
+    before do
+      allow(Net::SSH).to receive(:start).and_yield(ssh)
+      allow(ssh).to receive(:open_channel).and_yield(channel)
+      # allow(channel).to receive(:request_pty)
+    end
+
     describe "#upload" do
       before do
         allow(::File).to receive(:directory?).and_call_original
         allow(connection).to receive(:logger).and_return(logger)
         allow(connection).to receive(:session).and_return(session)
+        allow(connection).to receive(:scp).and_return(nil)
         allow(connection).to receive(:archive).with(local_dir).and_return(archive_file)
         allow_any_instance_of(Kitchen::Transport::Ssh::Connection).to receive(:execute)
       end
@@ -94,8 +101,10 @@ describe Kitchen::Transport::ExpressSsh do
         it "archives directories and uploads them" do
           allow(::File).to receive(:directory?).with(local_dir).and_return(true)
           allow(::File).to receive(:directory?).with(archive_file).and_return(false)
-
           expect(connection).to receive(:archive).with(local_dir)
+          expect(channel).to receive(:request_pty)
+          expect(ssh).to receive(:loop)
+          expect(channel).to receive(:exec).with("tar -xzf #{remote}/#{File.basename(archive_file)} -C #{remote} && rm -f #{remote}/#{File.basename(archive_file)}")
           connection.upload([local_dir], remote)
         end
 

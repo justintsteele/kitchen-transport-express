@@ -27,6 +27,16 @@ module Kitchen
     class Express
       # A constant that gets prepended to debugger messages.
       LOG_PREFIX = "EXPRESS"
+
+      # Logger class method to unify logging.
+      #
+      # @param logger [Kitchen::Logger] the logger that was created by the kitchen instance.
+      # @param message [String] the message to output.
+      # @param start_time [Time] the start time of the process if duration is desired to be part of the message.
+      def self.log(logger, message = nil, start_time = nil)
+        message = "#{message} (#{Time.now - start_time}s)" if start_time
+        logger.debug "[#{Express::LOG_PREFIX}] [#{Time.now.getutc.strftime("%Y-%m-%dT%H:%M:%S%:z")}] #{message}"
+      end
     end
 
     # Express SSH Transport Error class.
@@ -51,7 +61,7 @@ module Kitchen
       # @return [Ssh::Connection] an instance of Kitchen::Transport::ExpressSsh::Connection.
       def create_new_connection(options, &block)
         if @connection
-          logger.debug("[#{Express::LOG_PREFIX}] Shutting previous connection #{@connection}")
+          Express.log(logger, "shutting previous connection #{@connection}")
           @connection.close
         end
 
@@ -95,33 +105,35 @@ module Kitchen
         # @param locals [Array] the top-level list of directories and files to be transfered.
         # @param remote [String] the remote directory (kitchen_root).
         # @raise [ExpressFailed] if any of the threads raised an exception.
-        def upload(locals, remote) # rubocop: disable Metrics/MethodLength
+        def upload(locals, remote)
           return super unless valid_remote_requirements?(remote)
 
-          processed_locals = process_locals(locals)
-          pool, exceptions = thread_pool(processed_locals)
-          processed_locals.each do |local|
-            pool.post do
-              transfer(local, remote, session.options)
-            rescue => e
-              exceptions << e.cause
-            end
-          end
-          pool.shutdown
-          pool.wait_for_termination
-
-          raise ExpressFailed, exceptions.pop unless exceptions.empty?
-        end # rubocop: enable Metrics/MethodLength
+          start_time = Time.now
+          processed_local = process_locals(locals)
+          futures = create_futures(processed_local, remote)
+          all_done = Concurrent::Promise.zip(*futures).execute
+          all_done.value!
+        rescue => e
+          raise ExpressFailed, e.cause.to_s
+        ensure
+          Express.log(logger, "transport express complete", start_time)
+        end
 
         private
 
-        # Creates the thread pool and exceptions queue.
+        # Creates the concurrent futures.
         #
-        # @param processed_locals [Array] list of files and archives to be uploaded.
-        # @return [Array(Concurrent::FixedThreadPool, Queue)]
+        # @param locals [Array] list of files and archives to be uploaded.
+        # @return [Array(Concurrent::Promise)]
         # @api private
-        def thread_pool(processed_locals)
-          [Concurrent::FixedThreadPool.new([processed_locals.length, 10].min), Queue.new]
+        def create_futures(locals, remote)
+          # Start upload futures
+          executor = Concurrent::FixedThreadPool.new([locals.length, 10].min)
+          locals.map do |local|
+            Concurrent::Promise.execute(executor: executor) do
+              transfer(local, remote, session.options)
+            end
+          end
         end
 
         # Ensures the remote host has the minimum-required executables to extract the archives.
@@ -134,8 +146,7 @@ module Kitchen
           execute("mkdir -p #{remote}")
           true
         rescue => e
-          logger.debug("[#{Express::LOG_PREFIX}] Requirements not met on remote host for Express transport.")
-          logger.debug("[#{Express::LOG_PREFIX}] #{e}")
+          Express.log(logger, "Requirements not met on remote host for Express transport.\n#{e}")
           false
         end
 
@@ -166,13 +177,11 @@ module Kitchen
         # @raise [StandardError] if the files could not be uploaded successfully.
         # @api private
         def transfer(local, remote, opts = {})
-          logger.debug("[#{Express::LOG_PREFIX}] Transferring #{local} to #{remote}")
-
           Net::SSH.start(session.host, opts[:user], **opts) do |ssh|
-            ssh.scp.upload!(local, remote, opts)
+            scp(ssh, local, remote, opts)
             extract(ssh, local, remote)
           rescue Net::SCP::Error => ex
-            logger.debug("[#{Express::LOG_PREFIX}] upload failed with #{ex.message.strip}")
+            Express.log(logger, "upload failed with #{ex.message.strip}")
             raise "(#{ex.message.strip})"
           end
         end
