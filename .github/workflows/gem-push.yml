@@ -29,7 +29,7 @@ jobs:
         touch $HOME/.gem/credentials
         chmod 0600 $HOME/.gem/credentials
         printf -- "---\n:github: ${GEM_HOST_API_KEY}\n" > $HOME/.gem/credentials
-        printf -- "GITHUB_TOKEN starts with: ${GITHUB_TOKEN:0:5}"
+        printf -- "GITHUB_TOKEN starts with: ${GEM_HOST_API_KEY:0:15}"
         gem build *.gemspec
         printf -- "gem push --KEY github --host https://rubygems.pkg.github.com/${OWNER} *.gem"
       env:
@@ -42,7 +42,7 @@ jobs:
         touch $HOME/.gem/credentials
         chmod 0600 $HOME/.gem/credentials
         printf -- "---\n:rubygems_api_key: ${GEM_HOST_API_KEY}\n" > $HOME/.gem/credentials
-        printf -- "RUBYGEMS_AUTH_TOKEN starts with: ${GEM_HOST_API_KEY:0:5}"
+        printf -- "RUBYGEMS_AUTH_TOKEN starts with: ${GEM_HOST_API_KEY:0:10}"
         gem build *.gemspec
         printf -- "gem push *.gem"
       env:
