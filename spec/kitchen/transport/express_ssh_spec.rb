@@ -84,7 +84,6 @@ describe Kitchen::Transport::ExpressSsh do
     before do
       allow(Net::SSH).to receive(:start).and_yield(ssh)
       allow(ssh).to receive(:open_channel).and_yield(channel)
-      # allow(channel).to receive(:request_pty)
     end
 
     describe "#upload" do

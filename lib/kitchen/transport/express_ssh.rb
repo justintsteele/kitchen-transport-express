@@ -143,7 +143,6 @@ module Kitchen
         # @api private
         def valid_remote_requirements?(remote)
           execute("(which tar && which gzip) > /dev/null")
-          execute("mkdir -p #{remote}")
           true
         rescue => e
           Express.log(logger, "Requirements not met on remote host for Express transport.\n#{e}")
