@@ -1,5 +1,8 @@
 # kitchen-transport-express CHANGELOG
 
+## 1.4.1
+* fix: 👽️ remove remote command that has become incompatible with `test-kitchen >= 3.9.0`
+
 ## 1.4.0
 * feat: ♻️ utilize concurrent futures for enhanced parallelism
 * feat: 🔊 enhanced logging
